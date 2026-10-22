@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>🌌 Квантовый Кликер</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Квантовый Кликер","short_name":"Квант","start_url":".","display":"standalone","orientation":"portrait","background_color":"%230a0a1a","theme_color":"%236b4dff","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8C%8C%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%8C%3C/text%3E%3C/svg%3E">
+<!-- VK Bridge: подключаем, но игра работает и без него -->
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body { overscroll-behavior: none; touch-action: manipulation; width: 100%; height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #0a0a1a, #14102a);
+    color: #e0e0f0;
+    display: flex; flex-direction: column;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    user-select: none; -webkit-user-select: none;
+    position: relative; overflow: hidden;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 25%, #6b4dff, transparent),
+      radial-gradient(1px 1px at 75% 60%, #4dc3ff, transparent),
+      radial-gradient(2px 2px at 45% 80%, #a06bff, transparent),
+      radial-gradient(1px 1px at 88% 15%, #ff4dc3, transparent),
+      radial-gradient(1px 1px at 30% 45%, #6b4dff, transparent),
+      radial-gradient(1px 1px at 65% 35%, #4dc3ff, transparent);
+    pointer-events: none; opacity: 0.4; z-index: 0;
+    animation: quantumPulse 4s ease-in-out infinite;
+  }
+  @keyframes quantumPulse { 0%,100%{opacity:.25} 50%{opacity:.55} }
+
+  body.theme-void { background: linear-gradient(135deg, #000000, #0a0a1a); }
+  body.theme-plasma { background: linear-gradient(135deg, #1a0a2a, #2a0a3a); }
+  body.theme-nebula { background: linear-gradient(135deg, #0a1a2a, #1a0a2a); }
+  body.theme-singularity { background: linear-gradient(135deg, #050505, #1a0010); }
+  body.theme-hyper { background: linear-gradient(135deg, #001a1a, #0a1a3a); }
+  body > * { position: relative; z-index: 1; }
+
+  .top-section { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 16px; letter-spacing: 0.5px; margin-bottom: 2px; }
+  h1 span { color: #6b4dff; text-shadow: 0 0 12px rgba(107,77,255,0.6); }
+  .stats-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: #8a8ab0; margin-bottom: 4px; }
+  .stats-bar span b { color: #4dc3ff; }
+  .score { font-size: 30px; font-weight: bold; color: #8a6bff; text-shadow: 0 0 18px rgba(107,77,255,0.6), 0 0 4px rgba(77,195,255,0.8); line-height: 1.1; }
+  .cps { color: #8a8ab0; font-size: 11px; margin-bottom: 4px; }
+  .cps span { color: #4dc3ff; }
+  .buff-bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 0; }
+  .buff {
+    background: linear-gradient(135deg, #6b4dff, #4dc3ff); color: #0a0a1a;
+    font-weight: bold; font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    animation: pulse 1.5s infinite; box-shadow: 0 0 20px rgba(107,77,255,0.6);
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+
+  .click-area { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; padding: 6px 0; position: relative; }
+  .offline-banner {
+    background: linear-gradient(135deg, #6b4dff, #2a0a5a); padding: 6px 12px; border-radius: 8px;
+    margin-bottom: 6px; font-size: 11px; text-align: center; display: none; color: #fff;
+    font-weight: bold; box-shadow: 0 4px 15px rgba(107,77,255,0.4);
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%); max-width: 95%; z-index: 5;
+  }
+  .offline-banner.show { display: block; }
+
+  #clickBtn {
+    width: min(50vw, 38vh, 180px); height: min(50vw, 38vh, 180px);
+    border-radius: 50%; border: 3px solid #6b4dff;
+    background: radial-gradient(circle at 30% 30%, #3a2a7a, #0a0a2a);
+    color: #e0e0f0; font-size: 14px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.8), 0 0 30px rgba(107,77,255,0.4),
+      inset 0 -6px 15px rgba(0,0,0,0.6), inset 0 3px 8px rgba(107,77,255,0.3);
+    transition: transform 0.08s, box-shadow 0.2s;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    position: relative; text-shadow: 0 2px 4px rgba(0,0,0,0.8); letter-spacing: 1px;
+  }
+  #clickBtn::before {
+    content: '🌌'; position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    font-size: min(14vw, 10vh, 48px); filter: drop-shadow(0 0 15px #6b4dff);
+    animation: spin 8s linear infinite;
+  }
+  @keyframes spin { to { transform: translateX(-50%) rotate(360deg); } }
+  #clickBtn:active { transform: scale(0.94); box-shadow: 0 5px 15px rgba(0,0,0,0.8), 0 0 60px rgba(107,77,255,0.9), inset 0 -4px 12px rgba(0,0,0,0.6); }
+  #clickBtn.skin-entangled { background: radial-gradient(circle at 30% 30%, #6b4dff, #2a0a5a); border-color: #a06bff; }
+  #clickBtn.skin-superposed { background: radial-gradient(circle at 30% 30%, #4dc3ff, #0a2a5a); border-color: #6bffd6; box-shadow: 0 10px 30px rgba(77,195,255,0.6), inset 0 -8px 20px rgba(0,0,0,0.3); }
+  #clickBtn.skin-tunneling { background: radial-gradient(circle at 30% 30%, #ff6bd6, #5a0a3a); border-color: #ff6bd6; box-shadow: 0 10px 30px rgba(255,107,214,0.7), inset 0 -8px 20px rgba(0,0,0,0.35); }
+  #clickBtn.skin-quantumgold { background: radial-gradient(circle at 30% 30%, #fff2a0, #d4a017); border-color: #fff2a0; color: #1a1000; box-shadow: 0 10px 35px rgba(255,215,0,0.7), inset 0 -8px 20px rgba(0,0,0,0.25); }
+  #clickBtn.skin-singularity { background: radial-gradient(circle at 30% 30%, #ff0044, #0a0000); border-color: #ff0044; box-shadow: 0 10px 35px rgba(255,0,68,0.7), inset 0 -8px 20px rgba(0,0,0,0.35); animation: spin 4s linear infinite; }
+  #clickBtn.skin-hyper { background: radial-gradient(circle at 30% 30%, #00ffaa, #002a1a); border-color: #00ffaa; box-shadow: 0 10px 35px rgba(0,255,170,0.7), inset 0 -8px 20px rgba(0,0,0,0.35); animation: spin 3s linear infinite; }
+
+  .float { position: fixed; pointer-events: none; font-weight: bold; color: #4dc3ff; font-size: 15px; animation: floatUp 0.8s ease-out forwards; z-index: 999; text-shadow: 0 2px 8px rgba(107,77,255,0.9), 0 0 4px rgba(0,0,0,0.9); }
+  @keyframes floatUp { to { transform: translateY(-60px); opacity: 0; } }
+
+  .bottom-section { flex: 0 0 auto; display: flex; flex-direction: column; }
+  .tabs { display: flex; gap: 3px; justify-content: space-between; margin-bottom: 6px; }
+  .tab {
+    flex: 1; background: #14102a; border: 1px solid #2a1f4a; color: #8a8ab0;
+    padding: 8px 2px; border-radius: 8px; cursor: pointer; font-weight: bold;
+    transition: all 0.2s; font-size: 10px; position: relative; text-align: center;
+    line-height: 1.2; min-height: 40px; display: flex; align-items: center; justify-content: center;
+  }
+  .tab.active { background: linear-gradient(135deg, #6b4dff, #2a0a5a); color: #fff; border-color: #4dc3ff; box-shadow: 0 0 15px rgba(107,77,255,0.5); }
+  .tab .badge { position: absolute; top: 2px; right: 4px; background: #d64545; color: #fff; border-radius: 10px; padding: 0 5px; font-size: 9px; min-width: 14px; text-align: center; }
+  .tab .badge:empty { display: none; }
+
+  .panel {
+    flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+    padding: 8px 2px 4px;
+    background: linear-gradient(180deg, rgba(10,10,26,0.6), rgba(10,10,26,0.9));
+    border-radius: 12px 12px 0 0; max-height: 45vh; min-height: 30vh; border-top: 1px solid #2a1f4a;
+  }
+  .panel h2 { margin-bottom: 8px; font-size: 14px; text-align: center; color: #4dc3ff; letter-spacing: 0.5px; }
+  .panel::-webkit-scrollbar { width: 4px; }
+  .panel::-webkit-scrollbar-thumb { background: #2a1f4a; border-radius: 2px; }
+
+  .item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #14102a, #0a0a1a); border: 1px solid #2a1f4a;
+    padding: 9px 11px; border-radius: 10px; margin-bottom: 6px; gap: 8px;
+  }
+  .item-info { text-align: left; flex: 1; min-width: 0; }
+  .item-name { font-weight: bold; font-size: 12px; color: #e0e0f0; }
+  .item-desc { font-size: 10px; color: #6a6a8a; }
+  .item button {
+    background: linear-gradient(135deg, #6b4dff, #2a0a5a); border: none; color: #fff;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; font-weight: bold;
+    transition: all 0.2s; font-size: 11px; box-shadow: 0 3px 10px rgba(107,77,255,0.3);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); white-space: nowrap; min-width: 70px; min-height: 36px;
+  }
+  .item button:active:not(:disabled) { background: linear-gradient(135deg, #8a6bff, #4dc3ff); transform: scale(0.96); }
+  .item button:disabled { background: #1a142a; cursor: not-allowed; color: #4a4a6a; box-shadow: none; }
+
+  .ach {
+    display: flex; gap: 9px; align-items: center;
+    background: linear-gradient(135deg, #14102a, #0a0a1a); border: 1px solid #2a1f4a;
+    padding: 8px 11px; border-radius: 10px; margin-bottom: 5px; opacity: 0.4; transition: all 0.3s;
+  }
+  .ach.unlocked { opacity: 1; border-color: #4dc3ff; box-shadow: 0 0 15px rgba(77,195,255,0.2); }
+  .ach-icon { font-size: 22px; filter: grayscale(1); }
+  .ach.unlocked .ach-icon { filter: drop-shadow(0 0 6px #4dc3ff); }
+  .ach-name { font-weight: bold; font-size: 12px; color: #e0e0f0; }
+  .ach-desc { font-size: 10px; color: #6a6a8a; }
+
+  .prestige { text-align: center; background: linear-gradient(135deg, #14102a, #0a0a1a); border: 1px solid #2a1f4a; padding: 14px; border-radius: 12px; }
+  .prestige p { color: #8a8ab0; font-size: 12px; margin-bottom: 7px; line-height: 1.4; }
+  .prestige p b { color: #4dc3ff; }
+  .prestige button {
+    background: linear-gradient(135deg, #6b4dff, #2a0a5a); border: none; color: #fff;
+    padding: 11px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px;
+    box-shadow: 0 6px 20px rgba(107,77,255,0.5); margin-top: 6px; min-height: 44px; width: 100%;
+  }
+  .prestige button:disabled { background: #1a142a; box-shadow: none; cursor: not-allowed; color: #4a4a6a; }
+
+  .settings { background: linear-gradient(135deg, #14102a, #0a0a1a); border: 1px solid #2a1f4a; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 9px; }
+  .settings label { display: flex; justify-content: space-between; align-items: center; font-size: 12px; cursor: pointer; color: #8a8ab0; gap: 8px; }
+  .settings label b { color: #4dc3ff; }
+  .settings select, .settings input[type=checkbox], .settings input[type=text] {
+    background: #0a0a1a; color: #e0e0f0; border: 1px solid #2a1f4a; border-radius: 6px;
+    padding: 6px 8px; cursor: pointer; font-size: 12px; min-height: 36px;
+  }
+  .settings input[type=checkbox] { width: 20px; height: 20px; accent-color: #6b4dff; }
+  .settings input[type=text] { cursor: text; width: 130px; }
+  .settings button { min-height: 36px; padding: 6px 12px; font-size: 11px; }
+
+  .reset { margin-top: 8px; background: transparent; border: 1px solid #2a1f4a; color: #6a6a8a; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 11px; align-self: center; transition: all 0.2s; }
+  .reset:active { border-color: #d64545; color: #d64545; }
+
+  .toast {
+    position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    background: linear-gradient(135deg, #6b4dff, #4dc3ff); color: #0a0a1a; font-weight: bold;
+    padding: 10px 16px; border-radius: 10px; box-shadow: 0 8px 30px rgba(107,77,255,0.6);
+    transition: transform 0.4s ease; z-index: 1000; max-width: 90vw; text-align: center; font-size: 12px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .buy-mult { display: flex; gap: 5px; justify-content: center; margin-bottom: 8px; }
+  .buy-mult button {
+    background: #14102a; border: 1px solid #2a1f4a; color: #8a8ab0;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 12px;
+    transition: all 0.2s; min-height: 36px; font-weight: bold;
+  }
+  .buy-mult button.active { background: linear-gradient(135deg, #6b4dff, #2a0a5a); color: #fff; border-color: #4dc3ff; }
+
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(5,5,15,0.85);
+    display: flex; align-items: center; justify-content: center; z-index: 2000;
+    padding: 20px; animation: fadeIn 0.3s; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: linear-gradient(135deg, #14102a, #0a0a1a); border-radius: 16px;
+    padding: 22px 18px; max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(107,77,255,0.3);
+    border: 2px solid #6b4dff; animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 { font-size: 17px; margin-bottom: 10px; color: #4dc3ff; }
+  .modal .big { font-size: 40px; margin: 8px 0; }
+  .modal p { color: #8a8ab0; font-size: 13px; line-height: 1.4; margin-bottom: 7px; }
+  .modal .reward { color: #4dc3ff; font-weight: bold; font-size: 17px; }
+  .modal button {
+    background: linear-gradient(135deg, #6b4dff, #2a0a5a); border: none; color: #fff;
+    padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px;
+    margin-top: 14px; box-shadow: 0 6px 20px rgba(107,77,255,0.5); width: 100%; min-height: 48px;
+  }
+  .modal .streak { display: flex; gap: 4px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+  .modal .day {
+    width: 32px; height: 32px; border-radius: 8px; background: #0a0a1a; border: 1px solid #2a1f4a;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: #4a4a6a;
+  }
+  .modal .day.done { background: linear-gradient(135deg, #6b4dff, #2a0a5a); color: #fff; border-color: #4dc3ff; }
+  .modal .day.today { background: linear-gradient(135deg, #4dc3ff, #6b4dff); color: #0a0a1a; border-color: #4dc3ff; animation: pulse 1s infinite; box-shadow: 0 0 15px rgba(77,195,255,0.7); }
+
+  .progress-bar { background: #0a0a1a; border-radius: 6px; height: 10px; overflow: hidden; border: 1px solid #2a1f4a; }
+  .progress-bar > div { background: linear-gradient(90deg, #6b4dff, #4dc3ff); height: 100%; transition: width 0.3s; box-shadow: 0 0 10px rgba(107,77,255,0.6); }
+
+  .spark {
+    position: fixed; width: 5px; height: 5px; border-radius: 50%;
+    background: radial-gradient(circle, #fff, #4dc3ff 40%, #6b4dff 70%, transparent);
+    pointer-events: none; z-index: 998; box-shadow: 0 0 8px #6b4dff, 0 0 15px #4dc3ff;
+  }
+
+  /* Лидерборд */
+  .lb-entry {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #14102a, #0a0a1a);
+    border: 1px solid #2a1f4a; padding: 8px 11px; border-radius: 10px;
+    margin-bottom: 5px; gap: 8px;
+  }
+  .lb-entry.gold { border-color: #ffd93b; box-shadow: 0 0 12px rgba(255,217,59,0.3); }
+  .lb-entry.silver { border-color: #c0c0c0; }
+  .lb-entry.bronze { border-color: #cd7f32; }
+  .lb-rank { font-size: 16px; width: 28px; text-align: center; }
+  .lb-name { font-weight: bold; font-size: 12px; color: #e0e0f0; }
+  .lb-meta { font-size: 10px; color: #6a6a8a; }
+  .lb-score { color: #4dc3ff; font-weight: bold; font-size: 12px; white-space: nowrap; }
+
+  .vk-btn {
+    width: 100%; padding: 11px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #0077ff, #0050cc); color: #fff;
+    font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 8px;
+    box-shadow: 0 6px 20px rgba(0,119,255,0.4); min-height: 44px;
+  }
+  .vk-btn:active { transform: scale(0.97); }
+
+  @media (max-height: 700px) {
+    h1 { font-size: 14px; } .score { font-size: 26px; } .stats-bar { font-size: 9px; } .panel { max-height: 38vh; }
+  }
+  @media (max-height: 600px) {
+    h1 { display: none; } .score { font-size: 22px; } .panel { max-height: 34vh; min-height: 24vh; }
+    #clickBtn { width: min(45vw, 32vh, 150px); height: min(45vw, 32vh, 150px); }
+  }
+  @media (min-width: 600px) {
+    body { padding: 20px; }
+    .panel { max-width: 500px; margin: 0 auto; width: 100%; max-height: 40vh; }
+    .tabs { max-width: 500px; margin: 0 auto 6px; }
+    #clickBtn { width: min(40vw, 260px); height: min(40vw, 260px); }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    body { flex-direction: row; padding: calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 6px); gap: 8px; }
+    .top-section { flex: 0 0 auto; width: 25%; justify-content: flex-start; }
+    .click-area { flex: 0 0 auto; width: 30%; padding: 0; }
+    .bottom-section { flex: 1 1 auto; min-width: 0; }
+    .panel { max-height: none; height: 100%; min-height: 0; }
+    h1 { font-size: 12px; } .score { font-size: 20px; } .stats-bar { font-size: 8px; gap: 5px; }
+    #clickBtn { width: min(22vh, 130px); height: min(22vh, 130px); font-size: 11px; }
+    #clickBtn::before { font-size: min(10vh, 40px); }
+    .tabs { flex-direction: column; gap: 2px; margin-bottom: 4px; }
+    .tab { font-size: 9px; padding: 5px 2px; min-height: 30px; }
+  }
+</style>
+</head>
+<body>
+  <div class="top-section">
+    <h1>🌌 Квантовый <span>Кликер</span></h1>
+    <div class="stats-bar">
+      <span>Уровень: <b id="prestigeCount">0</b></span>
+      <span>Когерентность: <b id="prestigeMult">x1</b></span>
+      <span>Запутываний: <b id="totalClicks">0</b></span>
+    </div>
+    <div class="score"><span id="score">0</span> Ψ</div>
+    <div class="cps">Квант/сек: <span id="cps">0</span></div>
+    <div class="buff-bar" id="buffBar"></div>
+  </div>
+
+  <div class="click-area">
+    <div class="offline-banner" id="offlineBanner"></div>
+    <button id="clickBtn">ЗАПУТАТЬ!</button>
+  </div>
+
+  <div class="bottom-section">
+    <div class="tabs">
+      <button class="tab active" data-tab="shop">🔬</button>
+      <button class="tab" data-tab="ach">🏅<span class="badge" id="achBadge"></span></button>
+      <button class="tab" data-tab="leaders">🏆</button>
+      <button class="tab" data-tab="stats">📊</button>
+      <button class="tab" data-tab="prestige">🌌</button>
+      <button class="tab" data-tab="settings">⚙️</button>
+    </div>
+    <div class="panel" id="panel"></div>
+    <button class="reset" onclick="hardReset()">🗑 Полный сброс</button>
+  </div>
+
+<script>
+/* ============ VK BRIDGE INIT ============ */
+let isVK = false;
+if (typeof vkBridge !== 'undefined') {
+  try {
+    vkBridge.send("VKWebAppInit").then(() => { isVK = true; }).catch(() => {});
+  } catch(e) {}
+}
+
+/* ============ ДАННЫЕ ============ */
+const upgrades = [
+  { id: 'probe',     name: 'Квантовый зонд',       desc: '+1 к запутыванию',        baseCost: 15,     cps: 0,      perClick: 1,      count: 0 },
+  { id: 'collider',  name: 'Мини-коллайдер',       desc: '+1 Ψ/сек',                baseCost: 50,     cps: 1,      perClick: 0,      count: 0 },
+  { id: 'entangler', name: 'Запутыватель',         desc: '+5 Ψ/сек',                baseCost: 300,    cps: 5,      perClick: 0,      count: 0 },
+  { id: 'quantumpc', name: 'Квантовый компьютер',  desc: '+25 Ψ/сек',               baseCost: 1500,   cps: 25,     perClick: 0,      count: 0 },
+  { id: 'teleport',  name: 'Телепорт',             desc: '+100 Ψ/сек',              baseCost: 8000,   cps: 100,    perClick: 0,      count: 0 },
+  { id: 'timetravel',name: 'Машина времени',       desc: '+500 Ψ/сек',              baseCost: 40000,  cps: 500,    perClick: 0,      count: 0 },
+  { id: 'dyson',     name: 'Сфера Дайсона',        desc: '+2500 Ψ/сек',             baseCost: 200000, cps: 2500,   perClick: 0,      count: 0 },
+  { id: 'wormhole',  name: 'Червоточина',          desc: '+15000 Ψ/сек',            baseCost: 1e6,    cps: 15000,  perClick: 0,      count: 0 },
+  { id: 'multiverse',name: 'Мультивселенная',      desc: '+100000 Ψ/сек',           baseCost: 6e6,    cps: 100000, perClick: 0,      count: 0 },
+  { id: 'bigbang',   name: 'Большой взрыв',        desc: '+750000 Ψ/сек',           baseCost: 4e7,    cps: 750000, perClick: 0,      count: 0 },
+];
+
+const achievements = [
+  { id: 'c1',     icon: '🔬', name: 'Первый эксперимент',  desc: '1 запутывание',             check: s => s.totalClicks >= 1 },
+  { id: 'c100',   icon: '💫', name: 'Сотня квантов',       desc: '100 запутываний',           check: s => s.totalClicks >= 100 },
+  { id: 'c1000',  icon: '⚛️', name: 'Физик',               desc: '1000 запутываний',          check: s => s.totalClicks >= 1000 },
+  { id: 'c10000', icon: '🌌', name: 'Магистр',             desc: '10 000 запутываний',        check: s => s.totalClicks >= 10000 },
+  { id: 'c100k',  icon: '🌀', name: 'Вихрь частиц',        desc: '100 000 запутываний',       check: s => s.totalClicks >= 100000 },
+  { id: 's100',   icon: '🔭', name: 'Первое открытие',     desc: '100 Ψ всего',               check: s => s.totalEarned >= 100 },
+  { id: 's10k',   icon: '🧪', name: 'Лаборант',            desc: '10 000 Ψ всего',            check: s => s.totalEarned >= 10000 },
+  { id: 's1m',    icon: '🏛', name: 'Профессор',           desc: '1 000 000 Ψ всего',         check: s => s.totalEarned >= 1e6 },
+  { id: 's1b',    icon: '👑', name: 'Директор института',  desc: '1 000 000 000 Ψ',           check: s => s.totalEarned >= 1e9 },
+  { id: 's1t',    icon: '🌠', name: 'Легенда квантов',     desc: '1 триллион Ψ',              check: s => s.totalEarned >= 1e12 },
+  { id: 'u1',     icon: '🛠', name: 'Первое устройство',   desc: 'Купить оборудование',       check: s => totalUpgrades() >= 1 },
+  { id: 'u50',    icon: '🏗', name: 'Лаборатория',         desc: 'Купить 50 устройств',       check: s => totalUpgrades() >= 50 },
+  { id: 'u200',   icon: '🏙', name: 'Исследовательский центр', desc: 'Купить 200 устройств',  check: s => totalUpgrades() >= 200 },
+  { id: 'p1',     icon: '⚡', name: 'Первый уровень',      desc: 'Первый уровень',            check: s => s.prestigeCount >= 1 },
+  { id: 'p10',    icon: '💫', name: 'Высокий уровень',     desc: '10 уровней',                check: s => s.prestigeCount >= 10 },
+  { id: 'p50',    icon: '🌟', name: 'Квантовый гуру',      desc: '50 уровней',                check: s => s.prestigeCount >= 50 },
+  { id: 'daily7', icon: '📅', name: 'Неделя в лаборатории',desc: '7 дней подряд',             check: s => s.dailyStreak >= 7 },
+  { id: 'daily30',icon: '🗓', name: 'Месяц в лаборатории', desc: '30 дней подряд',            check: s => s.dailyStreak >= 30 },
+  { id: 'skin1',  icon: '🎨', name: 'Новая оболочка',      desc: 'Купить скин',               check: s => Object.keys(s.unlockedSkins).length > 1 },
+  { id: 'skinAll',icon: '🌈', name: 'Коллекционер',        desc: 'Все скины',                 check: s => Object.keys(s.unlockedSkins).length >= Object.keys(SKINS).length },
+  { id: 'gold1',  icon: '✨', name: 'Квантовая флуктуация',desc: 'Поймать квантовую искру',   check: s => s.goldenCookiesClicked >= 1 },
+  { id: 'gold50', icon: '💎', name: 'Охотник за флуктуациями', desc:'Поймать 50 искр',       check: s => s.goldenCookiesClicked >= 50 },
+  { id: 'lb1',    icon: '🏆', name: 'В таблице',           desc: 'Записать результат в лидерборд', check: s => s.leaderboard.length > 0 },
+];
+
+const SKINS = {
+  default:     { name: 'Классическая сфера', cost: 0 },
+  entangled:   { name: 'Запутанная',         cost: 500 },
+  superposed:  { name: 'Суперпозиция',       cost: 10000 },
+  tunneling:   { name: 'Туннелирование',     cost: 100000 },
+  quantumgold: { name: 'Квантовое золото',   cost: 1000000 },
+  singularity: { name: 'Сингулярность',      cost: 10000000 },
+};
+
+const THEMES = {
+  default:     'Лаборатория',
+  void:        'Пустота',
+  plasma:      'Плазма',
+  nebula:      'Туманность',
+  singularity: 'Сингулярность',
+  hyper:       'Гиперпространство',
+};
+
+const DAILY_REWARDS = [100, 250, 500, 1000, 2500, 5000, 10000];
+
+/* ============ СОСТОЯНИЕ ============ */
+let state = {
+  score: 0,
+  totalEarned: 0,
+  totalClicks: 0,
+  prestigeCount: 0,
+  prestigeMult: 1,
+  unlockedAch: {},
+  unlockedSkins: { default: true },
+  currentSkin: 'default',
+  theme: 'default',
+  sound: true,
+  achievementsEnabled: true,
+  dailyStreak: 0,
+  lastDailyDate: null,
+  lastOnline: Date.now(),
+  totalPlayTime: 0,
+  buffEndTime: 0,
+  buffMultiplier: 1,
+  goldenCookiesClicked: 0,
+  playerName: 'Оператор',
+  leaderboard: [],
+  lastSubmittedScore: 0,
+};
+
+let cps = 0;
+let baseCps = 0;
+let clickPower = 1;
+let activeTab = 'shop';
+let buyMult = 1;
+
+const scoreEl = document.getElementById('score');
+const cpsEl = document.getElementById('cps');
+const clickBtn = document.getElementById('clickBtn');
+const panelEl = document.getElementById('panel');
+const totalClicksEl = document.getElementById('totalClicks');
+const prestigeCountEl = document.getElementById('prestigeCount');
+const prestigeMultEl = document.getElementById('prestigeMult');
+const buffBarEl = document.getElementById('buffBar');
+const offlineBannerEl = document.getElementById('offlineBanner');
+const achBadgeEl = document.getElementById('achBadge');
+
+/* ============ ЗВУК ============ */
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function vibrate(ms) { if (navigator.vibrate && state.sound) { try { navigator.vibrate(ms); } catch(e) {} } }
+function beep(freq = 600, dur = 0.06, type = 'sine', vol = 0.08) {
+  if (!state.sound) return;
+  try {
+    initAudio(); if (!audioCtx) return;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+function quantumSound() { if (!state.sound) return; beep(880 + Math.random() * 400, 0.05, 'sine', 0.06); }
+function buySound()      { beep(300, 0.1, 'square', 0.08); setTimeout(() => beep(500, 0.12, 'square', 0.08), 80); }
+function achSound()      { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => beep(f, 0.15, 'triangle', 0.1), i * 80)); }
+function prestigeSound() { [220, 330, 440, 660, 880].forEach((f, i) => setTimeout(() => beep(f, 0.2, 'sawtooth', 0.1), i * 90)); }
+function goldenSound()   { [880, 1320, 1760, 2640].forEach((f, i) => setTimeout(() => beep(f, 0.12, 'square', 0.09), i * 50)); }
+
+/* ============ УТИЛИТЫ ============ */
+function format(n) {
+  n = Math.floor(n);
+  if (n < 1000) return n.toString();
+  if (n < 1e6) return (n/1e3).toFixed(n < 1e4 ? 2 : 1) + 'K';
+  if (n < 1e9) return (n/1e6).toFixed(n < 1e7 ? 2 : 1) + 'M';
+  if (n < 1e12) return (n/1e9).toFixed(2) + 'B';
+  if (n < 1e15) return (n/1e12).toFixed(2) + 'T';
+  if (n < 1e18) return (n/1e15).toFixed(2) + 'Qa';
+  return (n/1e18).toFixed(2) + 'Qi';
+}
+function cost(u, count = u.count) { return Math.floor(u.baseCost * Math.pow(1.15, count)); }
+function totalUpgrades() { return upgrades.reduce((s, u) => s + u.count, 0); }
+function todayStr() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function isBuffActive() { return state.buffEndTime > Date.now(); }
+function computeCps() {
+  let c = 0, p = 1;
+  upgrades.forEach(u => { c += u.cps * u.count; p += u.perClick * u.count; });
+  baseCps = c;
+  const buffMult = isBuffActive() ? state.buffMultiplier : 1;
+  return { cps: c * state.prestigeMult * buffMult, clickPower: p * state.prestigeMult * buffMult };
+}
+
+/* ============ СОХРАНЕНИЕ ============ */
+function save() {
+  state.lastOnline = Date.now();
+  const data = { state, upgrades: upgrades.map(u => ({ id: u.id, count: u.count })), version: 4 };
+  try { localStorage.setItem('quantumClicker', JSON.stringify(data)); } catch(e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem('quantumClicker');
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.state) Object.assign(state, data.state);
+    if (!state.leaderboard) state.leaderboard = [];
+    if (!state.playerName) state.playerName = 'Оператор';
+    if (data.upgrades) data.upgrades.forEach(s => { const u = upgrades.find(x => x.id === s.id); if (u) u.count = s.count || 0; });
+    return data;
+  } catch(e) { return null; }
+}
+
+/* ============ ОФФЛАЙН ============ */
+function applyOfflineEarnings() {
+  if (!state.lastOnline) return;
+  const elapsed = Math.min(Date.now() - state.lastOnline, 24 * 3600 * 1000);
+  const seconds = elapsed / 1000;
+  if (seconds < 30) return;
+  updateCps();
+  if (baseCps <= 0) return;
+  const earned = cps * seconds * 0.5;
+  if (earned < 1) return;
+  state.score += earned; state.totalEarned += earned;
+  const hours = Math.floor(seconds / 3600); const minutes = Math.floor((seconds % 3600) / 60);
+  let timeText = hours > 0 ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
+  offlineBannerEl.textContent = `🌌 Реактор работал без тебя (${timeText}) и накопил ${format(earned)} Ψ`;
+  offlineBannerEl.classList.add('show');
+  setTimeout(() => offlineBannerEl.classList.remove('show'), 8000);
+}
+
+/* ============ ЕЖЕДНЕВНЫЙ ============ */
+function checkDaily() {
+  const today = todayStr();
+  if (state.lastDailyDate === today) return;
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
+  if (state.lastDailyDate === yStr) state.dailyStreak++;
+  else if (state.lastDailyDate !== today) state.dailyStreak = 1;
+  state.lastDailyDate = today; save();
+  const rewardIndex = Math.min(state.dailyStreak - 1, DAILY_REWARDS.length - 1);
+  const reward = DAILY_REWARDS[rewardIndex] * state.prestigeMult;
+  setTimeout(() => showDailyModal(reward), 600);
+}
+function showDailyModal(reward) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  const days = DAILY_REWARDS.map((r, i) => {
+    const dayNum = i + 1; let cls = 'day';
+    if (dayNum < state.dailyStreak) cls += ' done';
+    else if (dayNum === state.dailyStreak) cls += ' today';
+    return `<div class="${cls}">${dayNum}</div>`;
+  }).join('');
+  modal.innerHTML = `
+    <div class="modal">
+      <h3>📅 Смена в лаборатории</h3>
+      <div class="big">🌌</div>
+      <p>День <b style="color:#4dc3ff">${state.dailyStreak}</b> подряд!</p>
+      <div class="streak">${days}</div>
+      <p class="reward">+${format(reward)} Ψ</p>
+      <button id="claimDaily">Забрать</button>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('claimDaily').addEventListener('click', () => {
+    state.score += reward; state.totalEarned += reward;
+    goldenSound(); vibrate(50); modal.remove();
+    checkAchievements(); render(); save();
+  });
+}
+
+/* ============ КВАНТОВАЯ ИСКРА ============ */
+function spawnGoldenCookie() {
+  const el = document.createElement('div');
+  el.textContent = '✨';
+  const size = Math.max(38, Math.min(window.innerWidth * 0.11, 60));
+  el.style.cssText = `position:fixed;font-size:${size}px;cursor:pointer;z-index:1500;
+    left:${Math.random()*70+15}%;top:${Math.random()*55+20}%;
+    filter:drop-shadow(0 0 20px #4dc3ff) drop-shadow(0 0 40px #6b4dff);
+    animation:pulse 0.8s infinite;user-select:none;transition:transform 0.1s;-webkit-tap-highlight-color:transparent;`;
+  let handled = false;
+  const onClick = (e) => {
+    e.preventDefault(); e.stopPropagation(); if (handled) return; handled = true;
+    goldenSound(); vibrate(60); state.goldenCookiesClicked++;
+    const roll = Math.random();
+    if (roll < 0.5) { state.buffEndTime = Date.now() + 30000; state.buffMultiplier = 7; showToast('✨ Квантовая флуктуация! x7 на 30 сек'); }
+    else if (roll < 0.8) { updateCps(); const bonus = Math.max(cps * 60, 500) * state.prestigeMult; state.score += bonus; state.totalEarned += bonus; showToast(`✨ Мгновенно +${format(bonus)} Ψ`); }
+    else { state.buffEndTime = Date.now() + 10000; state.buffMultiplier = 7; showToast('✨ Квантовый скачок x7 на 10 сек!'); }
+    updateCps(); el.remove(); save();
+  };
+  el.addEventListener('touchstart', onClick, { passive: false });
+  el.addEventListener('click', onClick);
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 12000);
+}
+
+/* ============ ЛИДЕРБОРД ============ */
+function submitToLeaderboard(silent = false) {
+  const scoreVal = Math.floor(state.totalEarned);
+  if (scoreVal <= 0) { if (!silent) showToast('Пока нечего записывать'); return; }
+  const entry = {
+    name: (state.playerName || 'Аноним').slice(0, 16),
+    score: scoreVal,
+    prestige: state.prestigeCount,
+    date: new Date().toLocaleDateString('ru-RU'),
+    ts: Date.now(),
+  };
+  state.leaderboard.push(entry);
+  state.leaderboard.sort((a, b) => b.score - a.score);
+  state.leaderboard = state.leaderboard.slice(0, 20);
+  state.lastSubmittedScore = scoreVal;
+  save();
+  if (!silent) { showToast('🏆 Результат записан в таблицу!'); render(); }
+}
+
+function renderLeaderboard() {
+  let html = '<h2>🏆 Таблица лидеров</h2>';
+
+  html += `<div class="settings" style="margin-bottom:10px">
+    <label>Твоё имя
+      <input type="text" id="playerNameInput" value="${escapeHtml(state.playerName)}" maxlength="16">
+    </label>
+  </div>`;
+
+  html += `<button class="vk-btn" onclick="submitToLeaderboard()">📤 Записать мой результат</button>`;
+
+  // Кнопка ВК-лидерборда
+  if (isVK) {
+    html += `<button class="vk-btn" onclick="showVKLeaderboard()" style="background:linear-gradient(135deg,#0077ff,#0050cc);margin-top:6px">🏆 Таблица ВК</button>`;
+  } else {
+    html += `<button class="vk-btn" onclick="showVKLeaderboard()" style="background:linear-gradient(135deg,#2a1f4a,#1a142a);color:#8a8ab0;margin-top:6px">🏆 Таблица ВК (только в ВК)</button>`;
+  }
+
+  // Поделиться
+  html += `<button class="vk-btn" onclick="shareResult()" style="background:linear-gradient(135deg,#6b4dff,#2a0a5a);margin-top:6px">🔗 Поделиться результатом</button>`;
+
+  html += '<h2 style="margin-top:14px">Топ-20</h2>';
+
+  if (state.leaderboard.length === 0) {
+    html += '<p style="text-align:center;color:#6a6a8a;font-size:12px;padding:20px">Пока пусто. Стань первым!</p>';
+  } else {
+    state.leaderboard.forEach((e, i) => {
+      let medal = `${i + 1}.`;
+      let cls = 'lb-entry';
+      if (i === 0) { medal = '🥇'; cls += ' gold'; }
+      else if (i === 1) { medal = '🥈'; cls += ' silver'; }
+      else if (i === 2) { medal = '🥉'; cls += ' bronze'; }
+      html += `<div class="${cls}">
+        <div class="lb-rank">${medal}</div>
+        <div class="item-info">
+          <div class="lb-name">${escapeHtml(e.name)}</div>
+          <div class="lb-meta">${e.prestige} ур. · ${e.date}</div>
+        </div>
+        <div class="lb-score">${format(e.score)} Ψ</div>
+      </div>`;
+    });
+  }
+
+  panelEl.innerHTML = html;
+
+  const input = document.getElementById('playerNameInput');
+  if (input) {
+    input.addEventListener('change', () => {
+      state.playerName = input.value.trim() || 'Аноним';
+      save();
+    });
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function showVKLeaderboard() {
+  if (typeof vkBridge === 'undefined') {
+    showToast('Открой игру в ВК, чтобы увидеть таблицу ВК');
+    return;
+  }
+  try {
+    const userScore = Math.min(Math.floor(state.totalEarned), 10000000);
+    await vkBridge.send("VKWebAppShowLeaderBoardBox", { user_result: userScore });
+  } catch (e) {
+    showToast('Таблица ВК пока недоступна');
+  }
+}
+
+async function shareResult() {
+  const text = `🌌 Я накопил ${format(state.totalEarned)} Ψ в Квантовом Кликере! Уровень ${state.prestigeCount}. Попробуй побить мой рекорд!`;
+  const url = location.href;
+
+  if (typeof vkBridge !== 'undefined' && isVK) {
+    try {
+      await vkBridge.send("VKWebAppShare", { link: url });
+      return;
+    } catch (e) {}
+  }
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Квантовый Кликер', text, url });
+      return;
+    } catch (e) {}
+  }
+  // Фолбэк: копируем
+  try {
+    await navigator.clipboard.writeText(text + ' ' + url);
+    showToast('📋 Скопировано в буфер');
+  } catch (e) {
+    prompt('Скопируй:', text + ' ' + url);
+  }
+}
+
+/* ============ РЕНДЕР ============ */
+function render() {
+  scoreEl.textContent = format(state.score);
+  cpsEl.textContent = format(cps);
+  totalClicksEl.textContent = format(state.totalClicks);
+  prestigeCountEl.textContent = state.prestigeCount;
+  prestigeMultEl.textContent = 'x' + state.prestigeMult.toFixed(2);
+  document.body.className = state.theme === 'default' ? '' : 'theme-' + state.theme;
+  clickBtn.className = '';
+  if (state.currentSkin !== 'default') clickBtn.classList.add('skin-' + state.currentSkin);
+  if (isBuffActive()) {
+    const left = Math.ceil((state.buffEndTime - Date.now()) / 1000);
+    buffBarEl.innerHTML = `<div class="buff">⚡ x${state.buffMultiplier} (${left}с)</div>`;
+  } else buffBarEl.innerHTML = '';
+  const newAch = achievements.filter(a => !state.unlockedAch[a.id] && a.check(state)).length;
+  achBadgeEl.textContent = newAch > 0 ? newAch : '';
+  renderPanel();
+}
+
+function renderPanel() {
+  const scrollTop = panelEl.scrollTop;
+  if (activeTab === 'shop') renderShop();
+  else if (activeTab === 'ach') renderAch();
+  else if (activeTab === 'leaders') renderLeaderboard();
+  else if (activeTab === 'stats') renderStats();
+  else if (activeTab === 'prestige') renderPrestige();
+  else if (activeTab === 'settings') renderSettings();
+  if (panelEl.scrollTop === 0 && scrollTop > 0) panelEl.scrollTop = scrollTop;
+}
+
+function renderShop() {
+  let html = '<h2>🔬 Оборудование лаборатории</h2>';
+  html += `<div class="buy-mult">${[1, 10, 100].map(m => `<button class="${buyMult === m ? 'active' : ''}" data-mult="${m}">x${m}</button>`).join('')}</div>`;
+  upgrades.forEach(u => {
+    let totalPrice = 0;
+    for (let i = 0; i < buyMult; i++) totalPrice += cost(u, u.count + i);
+    const canAfford = state.score >= totalPrice;
+    html += `<div class="item">
+      <div class="item-info"><div class="item-name">${u.name} (x${u.count})</div><div class="item-desc">${u.desc}</div></div>
+      <button ${canAfford ? '' : 'disabled'} data-id="${u.id}">${format(totalPrice)} Ψ${buyMult > 1 ? ` x${buyMult}` : ''}</button>
+    </div>`;
+  });
+  html += '<h2 style="margin-top:14px">🎨 Оболочки сферы</h2>';
+  Object.entries(SKINS).forEach(([id, s]) => {
+    const owned = state.unlockedSkins[id];
+    const active = state.currentSkin === id;
+    html += `<div class="item">
+      <div class="item-info"><div class="item-name">${s.name}</div><div class="item-desc">${owned ? (active ? '✅ Установлена' : 'Куплена') : 'Не куплена'}</div></div>
+      <button data-skin="${id}" ${(!owned && state.score < s.cost) ? 'disabled' : ''}>
+        ${owned ? (active ? 'Выбрана' : 'Выбрать') : `${format(s.cost)} Ψ`}
+      </button>
+    </div>`;
+  });
+  panelEl.innerHTML = html;
+}
+
+function renderAch() {
+  let html = '<h2>🏅 Достижения</h2>';
+  const unlockedCount = Object.keys(state.unlockedAch).filter(k => state.unlockedAch[k]).length;
+  html += `<p style="text-align:center;color:#6a6a8a;margin-bottom:10px;font-size:11px">Получено: ${unlockedCount} / ${achievements.length}</p>`;
+  achievements.forEach(a => {
+    const unlocked = state.unlockedAch[a.id];
+    html += `<div class="ach ${unlocked ? 'unlocked' : ''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
+    </div>`;
+  });
+  panelEl.innerHTML = html;
+}
+
+function renderStats() {
+  const seconds = state.totalPlayTime;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const unlockedCount = Object.keys(state.unlockedAch).filter(k => state.unlockedAch[k]).length;
+  const totalSpent = upgrades.reduce((sum, u) => {
+    let s = 0; for (let i = 0; i < u.count; i++) s += Math.floor(u.baseCost * Math.pow(1.15, i));
+    return sum + s;
+  }, 0);
+  let html = '<h2>📊 Статистика</h2>';
+  html += `<div class="settings">
+    <label>Всего квантов <b>${format(state.totalEarned)} Ψ</b></label>
+    <label>Потрачено <b>${format(totalSpent)} Ψ</b></label>
+    <label>Запутываний <b>${format(state.totalClicks)}</b></label>
+    <label>Средняя мощность <b>${format(baseCps)}/с</b></label>
+    <label>Устройств <b>${totalUpgrades()}</b></label>
+    <label>Достижений <b>${unlockedCount}/${achievements.length}</b></label>
+    <label>Уровней <b>${state.prestigeCount}</b></label>
+    <label>Когерентность <b>x${state.prestigeMult.toFixed(2)}</b></label>
+    <label>Квантовых искр <b>${state.goldenCookiesClicked}</b></label>
+    <label>Серия смен <b>${state.dailyStreak} 🔥</b></label>
+    <label>Время в лаборатории <b>${hours}ч ${minutes}м</b></label>
+  </div>`;
+  const required = 1e6 * Math.pow(10, state.prestigeCount);
+  const progress = Math.min(100, (state.totalEarned / required) * 100);
+  html += `<h2 style="margin-top:14px">Прогресс уровня</h2>`;
+  html += `<div style="background:linear-gradient(135deg,#14102a,#0a0a1a);border:1px solid #2a1f4a;padding:12px;border-radius:10px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a8ab0;margin-bottom:5px">
+      <span>${format(state.totalEarned)} / ${format(required)}</span><span>${progress.toFixed(1)}%</span>
+    </div>
+    <div class="progress-bar"><div style="width:${progress}%"></div></div>
+  </div>`;
+  panelEl.innerHTML = html;
+}
+
+function renderPrestige() {
+  const required = 1e6 * Math.pow(10, state.prestigeCount);
+  const canPrestige = state.totalEarned >= required;
+  const gain = Math.floor(Math.sqrt(state.totalEarned / 1e6));
+  const newMult = (1 + gain * 0.1).toFixed(2);
+  let html = '<h2>🌌 Повышение уровня</h2><div class="prestige">';
+  html += `<p>Сбросить прогресс и получить постоянную когерентность.</p>`;
+  html += `<p>Текущая когерентность: <b>x${state.prestigeMult.toFixed(2)}</b></p>`;
+  html += `<p>Нужно накопить: <b>${format(required)}</b> Ψ</p>`;
+  html += `<p>Накоплено: <b>${format(state.totalEarned)}</b> Ψ</p>`;
+  html += `<p>Даст когерентность: <b style="color:#6b4dff">x${newMult}</b></p>`;
+  html += `<button ${canPrestige ? '' : 'disabled'} onclick="doPrestige()">${canPrestige ? 'Повысить уровень' : 'Недостаточно квантов'}</button>`;
+  html += '</div>';
+  panelEl.innerHTML = html;
+}
+
+function renderSettings() {
+  let html = '<h2>⚙️ Настройки</h2><div class="settings">';
+  html += `<label>Звук <input type="checkbox" id="optSound" ${state.sound ? 'checked' : ''}></label>`;
+  html += `<label>Уведомления <input type="checkbox" id="optAch" ${state.achievementsEnabled ? 'checked' : ''}></label>`;
+  html += `<label>Тема <select id="optTheme">${Object.entries(THEMES).map(([k, v]) => `<option value="${k}" ${state.theme === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>`;
+  html += `<label>Сбросить серию <button id="optResetDaily" style="background:#d64545;border:none;color:#fff;border-radius:6px;cursor:pointer;font-weight:bold">Сброс</button></label>`;
+  html += `<label>Экспорт <button id="optExport" style="background:#2a1f4a;border:none;color:#4dc3ff;border-radius:6px;cursor:pointer;font-weight:bold">Копировать</button></label>`;
+  html += `<label>Импорт <button id="optImport" style="background:#2a1f4a;border:none;color:#4dc3ff;border-radius:6px;cursor:pointer;font-weight:bold">Вставить</button></label>`;
+  html += '</div>';
+  panelEl.innerHTML = html;
+  document.getElementById('optSound').addEventListener('change', e => { state.sound = e.target.checked; save(); });
+  document.getElementById('optAch').addEventListener('change', e => { state.achievementsEnabled = e.target.checked; save(); });
+  document.getElementById('optTheme').addEventListener('change', e => { state.theme = e.target.value; save(); render(); });
+  document.getElementById('optResetDaily').addEventListener('click', () => {
+    if (confirm('Сбросить серию ежедневных смен?')) { state.dailyStreak = 0; state.lastDailyDate = null; save(); render(); }
+  });
+  document.getElementById('optExport').addEventListener('click', exportSave);
+  document.getElementById('optImport').addEventListener('click', importSave);
+}
+
+/* ============ ЭКСПОРТ/ИМПОРТ ============ */
+function exportSave() {
+  const data = { state, upgrades: upgrades.map(u => ({ id: u.id, count: u.count })) };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(encoded).then(() => showToast('📋 Скопировано в буфер')).catch(() => prompt('Скопируй код:', encoded));
+  } else prompt('Скопируй код:', encoded);
+}
+function importSave() {
+  const input = prompt('Вставь код сохранения:');
+  if (!input) return;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(input))));
+    if (data.state) Object.assign(state, data.state);
+    if (!state.leaderboard) state.leaderboard = [];
+    if (data.upgrades) data.upgrades.forEach(s => { const u = upgrades.find(x => x.id === s.id); if (u) u.count = s.count || 0; });
+    updateCps(); render(); save(); showToast('✅ Сохранение загружено');
+  } catch(e) { showToast('❌ Неверный код'); }
+}
+
+/* ============ КЛИК ============ */
+let lastTouchTime = 0;
+function handleClick(e) {
+  const now = Date.now();
+  if (now - lastTouchTime < 50) return;
+  lastTouchTime = now;
+  initAudio();
+  const gain = clickPower;
+  state.score += gain; state.totalEarned += gain; state.totalClicks++;
+  quantumSound(); vibrate(10);
+  let x, y;
+  if (e.touches && e.touches[0]) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
+  else if (e.changedTouches && e.changedTouches[0]) { x = e.changedTouches[0].clientX; y = e.changedTouches[0].clientY; }
+  else { x = e.clientX || window.innerWidth / 2; y = e.clientY || window.innerHeight / 2; }
+  spawnSparks(x, y); spawnFloat(x, y, '+' + format(gain));
+  checkAchievements(); render();
+}
+clickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e); }, { passive: false });
+clickBtn.addEventListener('click', (e) => { if (Date.now() - lastTouchTime < 300) return; handleClick(e); });
+
+/* ============ ТАБЫ ============ */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('touchstart', (e) => { e.preventDefault(); activateTab(t); }, { passive: false });
+  t.addEventListener('click', () => activateTab(t));
+});
+function activateTab(t) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  activeTab = t.dataset.tab;
+  panelEl.scrollTop = 0;
+  renderPanel();
+  vibrate(8);
+}
+
+/* ============ ПАНЕЛЬ ============ */
+panelEl.addEventListener('click', (e) => handlePanelClick(e));
+panelEl.addEventListener('touchstart', (e) => {
+  const target = e.target.closest('button');
+  if (target) { e.preventDefault(); handlePanelClick(e); }
+}, { passive: false });
+
+function handlePanelClick(e) {
+  const btn = e.target.closest('button[data-id]');
+  if (btn) {
+    const u = upgrades.find(x => x.id === btn.dataset.id);
+    let totalPrice = 0;
+    for (let i = 0; i < buyMult; i++) totalPrice += cost(u, u.count + i);
+    if (state.score >= totalPrice) {
+      state.score -= totalPrice; u.count += buyMult;
+      buySound(); vibrate(15); updateCps(); checkAchievements(); render(); save();
+    }
+    return;
+  }
+  const multBtn = e.target.closest('button[data-mult]');
+  if (multBtn) { buyMult = parseInt(multBtn.dataset.mult); renderShop(); return; }
+  const skinBtn = e.target.closest('button[data-skin]');
+  if (skinBtn) {
+    const id = skinBtn.dataset.skin; const skin = SKINS[id];
+    if (!state.unlockedSkins[id]) {
+      if (state.score >= skin.cost) {
+        state.score -= skin.cost; state.unlockedSkins[id] = true; state.currentSkin = id;
+        buySound(); vibrate(20);
+      }
+    } else { state.currentSkin = id; beep(700, 0.06); }
+    checkAchievements(); render(); save();
+  }
+}
+
+/* ============ ЭФФЕКТЫ ============ */
+function spawnFloat(x, y, text) {
+  const el = document.createElement('div');
+  el.className = 'float'; el.textContent = text;
+  el.style.left = x + 'px'; el.style.top = (y - 20) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+function spawnSparks(x, y) {
+  const count = 6 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark'; s.style.left = x + 'px'; s.style.top = y + 'px';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 70;
+    const dx = Math.cos(angle) * dist; const dy = Math.sin(angle) * dist;
+    const scale = 0.4 + Math.random() * 0.8;
+    document.body.appendChild(s);
+    s.animate([
+      { transform: `translate(-50%, -50%) scale(${scale})`, opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
+    ], { duration: 350 + Math.random() * 250, easing: 'cubic-bezier(0.2, 0.8, 0.4, 1)' }).onfinish = () => s.remove();
+  }
+}
+function updateCps() { const c = computeCps(); cps = c.cps; clickPower = c.clickPower; }
+function checkAchievements() {
+  achievements.forEach(a => {
+    if (!state.unlockedAch[a.id] && a.check(state)) {
+      state.unlockedAch[a.id] = true;
+      if (state.achievementsEnabled) showToast(`${a.icon} ${a.name}: ${a.desc}`);
+      achSound(); vibrate(40);
+    }
+  });
+}
+function showToast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = text;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 2500);
+}
+
+function doPrestige() {
+  const required = 1e6 * Math.pow(10, state.prestigeCount);
+  if (state.totalEarned < required) return;
+  // Записываем рекорд перед сбросом
+  submitToLeaderboard(true);
+  const gain = Math.floor(Math.sqrt(state.totalEarned / 1e6));
+  state.prestigeCount++;
+  state.prestigeMult = 1 + gain * 0.1;
+  state.score = 0; state.totalEarned = 0;
+  upgrades.forEach(u => u.count = 0);
+  prestigeSound(); vibrate([50, 50, 100]);
+  showToast(`🌌 Уровень повышен! Когерентность x${state.prestigeMult.toFixed(2)}`);
+  updateCps(); checkAchievements(); render(); save();
+}
+function hardReset() {
+  if (!confirm('Полностью удалить весь прогресс?')) return;
+  localStorage.removeItem('quantumClicker');
+  location.reload();
+}
+
+/* ============ ЦИКЛ ============ */
+let lastTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+  state.totalPlayTime += dt;
+  if (cps > 0) { const gain = cps * dt; state.score += gain; state.totalEarned += gain; }
+  if (state.buffEndTime && state.buffEndTime <= now) { state.buffEndTime = 0; state.buffMultiplier = 1; updateCps(); }
+  checkAchievements(); render();
+}, 200);
+
+setInterval(() => { updateCps(); save(); }, 3000);
+
+function scheduleGolden() {
+  const delay = (60 + Math.random() * 60) * 1000;
+  setTimeout(() => { spawnGoldenCookie(); scheduleGolden(); }, delay);
+}
+scheduleGolden();
+setInterval(() => { if (state.lastDailyDate !== todayStr()) checkDaily(); }, 60000);
+
+window.addEventListener('beforeunload', save);
+window.addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) save();
+  else { applyOfflineEarnings(); checkDaily(); }
+});
+document.addEventListener('touchstart', function unlockAudio() { initAudio(); document.removeEventListener('touchstart', unlockAudio); }, { once: true, passive: true });
+document.addEventListener('click', function unlockAudio2() { initAudio(); document.removeEventListener('click', unlockAudio2); }, { once: true });
+
+/* ============ PWA ============ */
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'quantum-clicker-v4';
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.open(CACHE).then(cache =>
+        fetch(e.request).then(res => { cache.put(e.request, res.clone()); return res; }).catch(() => cache.match(e.request))
+      ));
+    });
+  `;
+  try {
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+  } catch(e) {}
+}
+
+/* ============ СТАРТ ============ */
+const loaded = load();
+updateCps();
+applyOfflineEarnings();
+checkDaily();
+checkAchievements();
+render();
+setTimeout(save, 1000);
+</script>
+</body>
+</html>
